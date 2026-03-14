@@ -41,7 +41,7 @@ In this proof:
 - The sinc function sin(u)/u is identified as the **chord density** of the limiting circle.
 - The convergence rate of the Leibniz series decomposes into a polygon-to-circle error of O(1/N²) and a Gibbs tail residual of O(1/N) — the engine is fast, the truncation is slow.
 
-**known to the Author after extensive online research per 14.03.2026
+* known to the Author after extensive online research per 14.03.2026
 
 ## The Gibbs Phenomenon as the Origin of π
 
