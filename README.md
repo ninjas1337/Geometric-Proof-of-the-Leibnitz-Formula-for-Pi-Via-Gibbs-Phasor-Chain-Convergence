@@ -52,12 +52,9 @@ The Gibbs overshoot is conventionally treated as a convergence defect — a nuis
 | `Geometric Proof of the Leibnitz Formula for Pi Via Gibbs Phasor Chain Convergence.pdf` | Compiled paper (9 pages) |
 | `README.md` | This file |
 
-## Building from Source
+## Interactive Visualization Tool
 
-```bash
-pdflatex pi_gibbs_v2.tex
-pdflatex pi_gibbs_v2.tex   # second pass for cross-references
-```
+https://ninjas1337.github.io/Fourier-Gibbs-Phenomenon-Explained-Geometrically/
 
 ## Background and Prior Work
 
