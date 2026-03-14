@@ -4,7 +4,7 @@
 **Date:** March 14, 2026 (Pi Day)  
 **License:** MIT
 
-![Gibbs Phasor Chain Visualization](Gibbs_Pi_Preview.png)
+![Gibbs Phasor Chain Visualization](Gibbs%20Pi%20Preview.png)
 ---
 
 ## What This Is
