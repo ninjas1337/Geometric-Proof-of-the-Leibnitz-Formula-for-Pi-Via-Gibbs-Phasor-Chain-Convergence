@@ -31,7 +31,7 @@ The Gibbs polygon and the Leibniz series are two states of the **same geometric 
 
 ## What Makes This Different from Standard Proofs
 
-All known proofs of the Leibniz formula import π from an external source — the Taylor series of arctan(x), the periodicity of e^(iθ), or the Gaussian integral. In every case, π is a **known input**.
+All known* proofs of the Leibniz formula import π from an external source — the Taylor series of arctan(x), the periodicity of e^(iθ), or the Gaussian integral. In every case, π is a **known input**.
 
 In this proof:
 
@@ -40,6 +40,8 @@ In this proof:
 - The Dirichlet kernel is revealed as the **intrinsic velocity** of the curvature deformation, and the integral representation of the Leibniz sum follows from integrating this velocity.
 - The sinc function sin(u)/u is identified as the **chord density** of the limiting circle.
 - The convergence rate of the Leibniz series decomposes into a polygon-to-circle error of O(1/N²) and a Gibbs tail residual of O(1/N) — the engine is fast, the truncation is slow.
+
+**known to the Author after extensive online research per 14.03.2026
 
 ## The Gibbs Phenomenon as the Origin of π
 
