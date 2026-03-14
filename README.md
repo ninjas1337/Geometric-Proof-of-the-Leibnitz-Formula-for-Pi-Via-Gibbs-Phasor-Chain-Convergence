@@ -48,8 +48,8 @@ The Gibbs overshoot is conventionally treated as a convergence defect — a nuis
 
 | File | Description |
 |------|-------------|
-| `pi_gibbs_v2.tex` | LaTeX source of the paper |
-| `pi_gibbs_v2.pdf` | Compiled paper (9 pages) |
+| `Gibbs Pi Preview.png` | Visualization of the 9th Harmonic and its Phasor Chain |
+| `Geometric Proof of the Leibnitz Formula for Pi Via Gibbs Phasor Chain Convergence.pdf` | Compiled paper (9 pages) |
 | `README.md` | This file |
 
 ## Building from Source
