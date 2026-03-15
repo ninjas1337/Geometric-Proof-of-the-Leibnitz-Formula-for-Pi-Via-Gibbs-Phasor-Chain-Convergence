@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Laplace Phasor Spiral — From Circle to Ellipse</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:#111;color:#e0e0e0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;display:flex;flex-direction:column;align-items:center;padding:1.5rem;min-height:100vh;}
+h1{font-size:1.5rem;font-weight:500;margin-bottom:0.25rem;color:#e8e6df;}
+.subtitle{font-size:0.9rem;color:#888780;margin-bottom:1.25rem;text-align:center;font-style:italic;}
+canvas{border-radius:12px;border:1px solid rgba(255,255,255,0.1);background:#1a1a1a;max-width:100%;}
+.controls{width:700px;max-width:100%;margin-top:1rem;display:flex;flex-direction:column;gap:10px;}
+.slider-row{display:flex;align-items:center;gap:12px;}
+.slider-row label{font-size:14px;color:#888780;min-width:110px;}
+.slider-row input[type=range]{flex:1;accent-color:#7F77DD;height:6px;}
+.slider-row span{font-size:14px;font-weight:500;min-width:55px;text-align:right;}
+.buttons{display:flex;gap:10px;margin-top:4px;flex-wrap:wrap;}
+.buttons button{background:transparent;border:1px solid rgba(255,255,255,0.2);color:#e0e0e0;padding:8px 16px;border-radius:8px;cursor:pointer;font-size:13px;transition:all 0.15s;}
+.buttons button:hover{background:rgba(255,255,255,0.08);border-color:rgba(255,255,255,0.35);}
+.buttons button:active{transform:scale(0.97);}
+.stats{display:flex;gap:12px;margin-top:12px;width:700px;max-width:100%;}
+.stat-card{flex:1;background:#1a1a1a;border-radius:8px;padding:0.75rem 1rem;border:1px solid rgba(255,255,255,0.06);}
+.stat-card .stat-label{font-size:12px;color:#888780;margin-bottom:4px;}
+.stat-card .stat-value{font-size:18px;font-weight:500;}
+.footer{margin-top:1.5rem;font-size:12px;color:#5F5E5A;text-align:center;}
+.footer a{color:#7F77DD;text-decoration:none;}
+</style>
+</head>
+<body>
+
+<h1>From Circle to Ellipse — Fourier Meets Laplace</h1>
+<p class="subtitle">Every arm gets shorter and decays. The circle deforms. What constant does the ellipse produce?</p>
+
+<canvas id="cv" width="700" height="520"></canvas>
+
+<div class="controls">
+  <div class="slider-row">
+    <label>Harmonics</label>
+    <input type="range" min="3" max="40" value="9" step="1" id="harm" />
+    <span id="harm-out">9</span>
+  </div>
+  <div class="slider-row">
+    <label>Decay (sigma)</label>
+    <input type="range" min="-0.5" max="0" value="0" step="0.01" id="sigma" />
+    <span id="sigma-out">0.00</span>
+  </div>
+  <div class="slider-row">
+    <label>Position (theta)</label>
+    <input type="range" min="0" max="3.1416" value="1.5708" step="0.005" id="theta" />
+    <span id="theta-out">90.0 deg</span>
+  </div>
+
+  <div class="buttons">
+    <button onclick="setPreset(0,Math.PI/2)">Fourier (circle)</button>
+    <button onclick="setGibbs()">Gibbs angle</button>
+    <button onclick="setPreset(-0.15,Math.PI/2)">Laplace (spiral)</button>
+    <button onclick="setPreset(-0.5,Math.PI/2)">Ellipse (sigma=-0.5)</button>
+    <button onclick="setPreset(-0.35,Math.PI/2)">Deep decay</button>
+  </div>
+</div>
+
+<div class="stats">
+  <div class="stat-card">
+    <div class="stat-label">Endpoint magnitude</div>
+    <div class="stat-value" id="stat-mag">0</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">k * A_k product</div>
+    <div class="stat-value" id="stat-kak">1.000</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Chain length (string)</div>
+    <div class="stat-value" id="stat-len">0</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Endpoint projection</div>
+    <div class="stat-value" id="stat-proj">0</div>
+  </div>
+</div>
+
+<div class="footer">
+  Sanjin Redzic, B.Sc. — March 2026 — <a href="https://github.com/ninjas1337">github.com/ninjas1337</a>
+</div>
+
+<script>
+const cv=document.getElementById('cv'),ctx=cv.getContext('2d');
+const harmSl=document.getElementById('harm'),sigmaSl=document.getElementById('sigma'),thetaSl=document.getElementById('theta');
+const harmOut=document.getElementById('harm-out'),sigmaOut=document.getElementById('sigma-out'),thetaOut=document.getElementById('theta-out');
+
+const armColors=['#7F77DD','#1D9E75','#D85A30','#D4537E','#378ADD','#639922','#BA7517','#E24B4A','#534AB7','#0F6E56','#993C1D','#993556','#185FA5','#3B6D11','#854F0B','#A32D2D','#3C3489','#085041','#712B13','#72243E','#0C447C','#27500A','#633806','#791F1F','#7F77DD','#1D9E75','#D85A30','#D4537E','#378ADD','#639922','#BA7517','#E24B4A','#534AB7','#0F6E56','#993C1D','#993556','#185FA5','#3B6D11','#854F0B','#A32D2D'];
+
+function getArms(N,sigma,theta){
+  const arms=[];
+  for(let k=0;k<N;k++){
+    const freq=2*k+1;
+    const amp=(1/freq)*Math.exp(sigma*freq);
+    const phase=freq*theta;
+    arms.push({k,freq,amp,phase,re:amp*Math.cos(phase),im:amp*Math.sin(phase)});
+  }
+  return arms;
+}
+
+function draw(){
+  const dpr=window.devicePixelRatio||1;
+  const W=700,H=520;
+  cv.width=W*dpr;cv.height=H*dpr;
+  cv.style.width=W+'px';cv.style.height=H+'px';
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+
+  const bg='#1a1a1a';
+  const textCol='#e0e0e0';
+  const gridCol='rgba(255,255,255,0.08)';
+  const axisCol='rgba(255,255,255,0.2)';
+
+  ctx.fillStyle=bg;ctx.fillRect(0,0,W,H);
+
+  const N=parseInt(harmSl.value);
+  const sigma=parseFloat(sigmaSl.value);
+  const theta=parseFloat(thetaSl.value);
+
+  harmOut.textContent=N;
+  sigmaOut.textContent=sigma.toFixed(2);
+  thetaOut.textContent=(theta*180/Math.PI).toFixed(1)+' deg';
+
+  const arms=getArms(N,sigma,theta);
+
+  const cx=280,cy=260,scale=100;
+
+  // Grid circles
+  ctx.strokeStyle=gridCol;ctx.lineWidth=0.5;
+  for(let r=1;r<=4;r++){
+    ctx.beginPath();ctx.arc(cx,cy,r*scale,0,2*Math.PI);ctx.stroke();
+  }
+
+  // Axes
+  ctx.strokeStyle=axisCol;ctx.lineWidth=0.5;
+  ctx.beginPath();ctx.moveTo(cx-4*scale,cy);ctx.lineTo(cx+4*scale,cy);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(cx,cy-4*scale);ctx.lineTo(cx,cy+4*scale);ctx.stroke();
+
+  ctx.fillStyle=textCol;ctx.font='11px sans-serif';ctx.textAlign='center';
+  ctx.fillText('Re',cx+4*scale-10,cy-8);
+  ctx.fillText('Im',cx+12,cy-4*scale+14);
+
+  // Endpoint trace over full theta range
+  const traceN=300;
+  ctx.beginPath();ctx.strokeStyle='rgba(255,255,255,0.15)';ctx.lineWidth=1;
+  for(let i=0;i<=traceN;i++){
+    const t=i/traceN*Math.PI;
+    const a=getArms(N,sigma,t);
+    let rx=0,ry=0;
+    for(const arm of a){rx+=arm.re;ry+=arm.im;}
+    const sx=cx+rx*scale,sy=cy-ry*scale;
+    if(i===0)ctx.moveTo(sx,sy);else ctx.lineTo(sx,sy);
+  }
+  ctx.stroke();
+
+  // Draw mirrored trace (full ellipse/circle)
+  ctx.beginPath();ctx.strokeStyle='rgba(255,255,255,0.07)';ctx.lineWidth=0.5;ctx.setLineDash([4,4]);
+  for(let i=0;i<=traceN;i++){
+    const t=i/traceN*Math.PI;
+    const a=getArms(N,sigma,t);
+    let rx=0,ry=0;
+    for(const arm of a){rx+=arm.re;ry+=arm.im;}
+    const sx=cx+rx*scale,sy=cy+ry*scale;
+    if(i===0)ctx.moveTo(sx,sy);else ctx.lineTo(sx,sy);
+  }
+  ctx.stroke();ctx.setLineDash([]);
+
+  // Draw arm vectors
+  let px=cx,py=cy;
+  for(let i=0;i<arms.length;i++){
+    const arm=arms[i];
+    const nx=px+arm.re*scale,ny=py-arm.im*scale;
+    ctx.beginPath();
+    ctx.strokeStyle=armColors[i%armColors.length];
+    ctx.lineWidth=Math.max(1.5,3-i*0.15);
+    ctx.moveTo(px,py);ctx.lineTo(nx,ny);ctx.stroke();
+
+    ctx.beginPath();
+    ctx.fillStyle=armColors[i%armColors.length];
+    ctx.arc(nx,ny,Math.max(2,4-i*0.2),0,2*Math.PI);ctx.fill();
+
+    px=nx;py=ny;
+  }
+
+  // Resultant (dotted line)
+  ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(px,py);
+  ctx.strokeStyle='#F0997B';ctx.lineWidth=2;ctx.setLineDash([6,4]);ctx.stroke();ctx.setLineDash([]);
+
+  // Origin dot
+  ctx.beginPath();ctx.arc(cx,cy,4,0,2*Math.PI);
+  ctx.fillStyle='#9FE1CB';ctx.fill();
+
+  // Endpoint dot
+  ctx.beginPath();ctx.arc(px,py,5,0,2*Math.PI);
+  ctx.fillStyle='#F0997B';ctx.fill();
+
+  // Compute stats
+  let endRe=0,endIm=0,chainLen=0;
+  for(const arm of arms){endRe+=arm.re;endIm+=arm.im;chainLen+=arm.amp;}
+  const endMag=Math.sqrt(endRe*endRe+endIm*endIm);
+
+  document.getElementById('stat-mag').textContent=endMag.toFixed(4);
+  document.getElementById('stat-len').textContent=chainLen.toFixed(4);
+  document.getElementById('stat-proj').textContent='Re='+endRe.toFixed(4)+' Im='+endIm.toFixed(4);
+
+  const kakFirst=arms[0]?arms[0].freq*arms[0].amp:0;
+  const kakLast=arms.length>1?arms[arms.length-1].freq*arms[arms.length-1].amp:0;
+  document.getElementById('stat-kak').textContent=kakFirst.toFixed(3)+(sigma!==0?' / '+kakLast.toFixed(3):' (all)');
+
+  // Info panel
+  const infoX=520,infoY=30;
+  ctx.fillStyle=textCol;ctx.font='500 14px sans-serif';ctx.textAlign='left';
+  ctx.fillText(sigma===0?'Fourier mode (circle)':'Laplace mode (sigma='+sigma.toFixed(2)+')',infoX,infoY);
+  ctx.font='12px sans-serif';ctx.fillStyle='#888780';
+  ctx.fillText('N = '+N+' odd harmonics',infoX,infoY+22);
+  ctx.fillText('theta = '+(theta*180/Math.PI).toFixed(1)+' deg',infoX,infoY+40);
+
+  // Arm table
+  ctx.fillStyle=textCol;ctx.font='500 13px sans-serif';
+  ctx.fillText('Arm magnitudes:',infoX,infoY+72);
+  ctx.font='11px sans-serif';
+  for(let i=0;i<Math.min(N,14);i++){
+    const arm=arms[i];
+    ctx.fillStyle=armColors[i%armColors.length];
+    ctx.fillRect(infoX,infoY+88+i*17,8,8);
+    ctx.fillStyle='#888780';
+    ctx.fillText('k='+(2*i+1)+' |v|='+arm.amp.toFixed(4)+' k*A='+(arm.freq*arm.amp).toFixed(3),infoX+14,infoY+96+i*17);
+  }
+  if(N>14){
+    ctx.fillStyle='#888780';
+    ctx.fillText('... +'+(N-14)+' more',infoX+14,infoY+96+14*17);
+  }
+
+  // Conservation status
+  if(sigma===0){
+    ctx.fillStyle='#9FE1CB';ctx.font='500 13px sans-serif';
+    ctx.fillText('k*A_k = 1 (conserved)',infoX,infoY+360);
+    ctx.font='12px sans-serif';ctx.fillStyle='#888780';
+    ctx.fillText('Circle: ratio = pi',infoX,infoY+378);
+    ctx.fillText('Endpoint at pi/2 = pi/4 = '+((Math.PI/4)).toFixed(4),infoX,infoY+396);
+  } else {
+    ctx.fillStyle='#F5C4B3';ctx.font='500 13px sans-serif';
+    ctx.fillText('k*A_k decays (broken symmetry)',infoX,infoY+360);
+    ctx.font='12px sans-serif';ctx.fillStyle='#888780';
+    const exact=Math.atan(Math.exp(sigma));
+    ctx.fillText('Ellipse: atan(e^sigma) = '+exact.toFixed(4),infoX,infoY+378);
+    ctx.fillText('Chain length: atanh(e^sigma) = '+chainLen.toFixed(4),infoX,infoY+396);
+    if(Math.abs(sigma+0.5)<0.01){
+      ctx.fillStyle='#7F77DD';
+      ctx.fillText('sigma = -1/2: perfect ellipse',infoX,infoY+416);
+      ctx.fillText('Gardener\'s construction',infoX,infoY+434);
+    }
+  }
+}
+
+function setPreset(s,t){
+  sigmaSl.value=s;thetaSl.value=t;draw();
+}
+function setGibbs(){
+  const N=parseInt(harmSl.value);
+  sigmaSl.value=0;thetaSl.value=Math.PI/(N+1);draw();
+}
+
+harmSl.oninput=draw;sigmaSl.oninput=draw;thetaSl.oninput=draw;
+
+window.addEventListener('resize',draw);
+draw();
+</script>
+</body>
+</html>
