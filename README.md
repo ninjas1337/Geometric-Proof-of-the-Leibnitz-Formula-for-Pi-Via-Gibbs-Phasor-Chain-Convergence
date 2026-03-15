@@ -59,7 +59,9 @@ The Gibbs overshoot is conventionally treated as a convergence defect — a nuis
 
 ## Interactive Visualization Tool
 
-https://ninjas1337.github.io/Fourier-Gibbs-Phenomenon-Explained-Geometrically/
+Gibbs phenomena and main tool: https://ninjas1337.github.io/Fourier-Gibbs-Phenomenon-Explained-Geometrically/
+
+Laplace tool: https://ninjas1337.github.io/Geometric-Proof-of-the-Leibnitz-Formula-for-Pi-Via-Gibbs-Phasor-Chain-Convergence/
 
 ## Background and Prior Work
 
