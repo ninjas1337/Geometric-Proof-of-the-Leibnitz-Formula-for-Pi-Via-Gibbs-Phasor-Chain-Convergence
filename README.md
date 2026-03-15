@@ -9,13 +9,15 @@
 
 ## What This Is
 
-A new proof of the Leibniz formula
+A new* proof of the Leibniz formula
 
 $$\frac{\pi}{4} = 1 - \frac{1}{3} + \frac{1}{5} - \frac{1}{7} + \cdots$$
 
 in which the value π is **constructed geometrically**, not imported from any external identity.
 
 The proof uses the phasor chain arising from Fourier partial sums — a polygonal path in the complex plane formed by chaining arm vectors tip-to-tail. As the number of harmonics increases, the polygon converges to a circle. The ratio of its circumference to its diameter is π. The Leibniz partial sums are the axis projection of the chain endpoint. The value π/4 falls out of the geometry.
+
+*not peer reviewed
 
 ## The Core Idea
 
